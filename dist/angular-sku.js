@@ -159,7 +159,17 @@
         }
       };
     }])
-    .directive('uiSku', ['$log', 'skuConfig', 'utilService', function($log, skuConfig, utilService){
+
+    /*<div class="row f-cb" ng-repeat="gbiSpec in model.gbiSpecification">
+          <div class="l-col">{{gbiSpec.name}}</div>
+          <div class="r-col">
+            <ul class="m-sku f-cb">
+            	<li ng-repeat="itemValue in gbiSpec.value"><span ng-class="{'js-seleted': keyMap[itemValue].selected,  'js-disabled': keyMap[itemValue].disabled}" ng-click="onSelect(itemValue)">{{itemValue}}</span></li>
+            </ul>
+          </div>
+        </div>*/
+
+    .directive('uiSku', ['$log', 'skuConfig', 'utilService', '$parse', function($log, skuConfig, utilService, $parse){
       return{
         restrict: 'A',
         transclude: true,
@@ -180,24 +190,7 @@
           scope.keyMap = {};
           scope.selected = [];
           scope.keys = utilService.getKeys(scope.skuData);
-
-          angular.forEach(scope.keys, function(array, i0){
-            angular.forEach(array, function(value, i1) {
-              scope.keyMap[value] = {
-                name: value,
-                selected: !1,
-                disabled: !1
-              };
-            });
-          });
-
-          // 手动设置transclude,解决用ng-transclude scope作用域问题
-          // https://gist.github.com/meanJim/1c3339bde5cbeac6417d
-          transclude(scope, function(clone){
-            element.append(clone);
-          });
-
-          // 初始化选中
+// 初始化选中
           scope.initSelect = function(keys){
             var list = keys.split(skuConfig.splitStr);
             if(list.length==0)  $log.error('input init-sku is undefiend!');
@@ -218,7 +211,12 @@
             });
 
             // fire callback
-            scope.onOk({$event:utilService.getNum(check.join(skuConfig.splitStr), scope.skuData)});
+            scope.onOk({
+              $event:{
+                num: utilService.getNum(check.join(skuConfig.splitStr), scope.skuData),
+                selected: scope.skuData[check.join(skuConfig.splitStr)]
+              }
+            });
           };
 
           // 检查每一项的状态
@@ -251,9 +249,47 @@
               });
             });
           };
+          angular.forEach(scope.keys, function(array, i0){
+            angular.forEach(array, function(value, i1) {
+              scope.keyMap[value] = {
+                name: value,
+                selected: !1,
+                disabled: !1
+              };
+            });
+          });
+
+//					console.log($parse(element));
+//        // 手动设置transclude,解决用ng-transclude scope作用域问题
+//        // https://gist.github.com/meanJim/1c3339bde5cbeac6417d
+
+
+          transclude(scope, function(clone){
+            element.append(clone);
+          });
 
           if(!!scope.initSku) scope.initSelect(scope.initSku);
         }
       };
-    }]);
+    }])
+
+    .directive('skulist', function () {
+		  return {
+		    restrict:'E',
+		    replace: true,
+		    scope: { specification: '='},
+		    template: [
+
+		      '<div class="row f-cb" ng-repeat="gbiSpec in specification">',
+          '<div class="l-col">{{gbiSpec.name}}</div>',
+          '<div class="r-col">',
+            '<ul class="m-sku f-cb">',
+            	'<li ng-repeat="itemValue in gbiSpec.value"><span ng-class="{\'js-seleted\': keyMap[itemValue].selected,  \'js-disabled\': keyMap[itemValue].disabled}" ng-click="onSelect(itemValue)">{{itemValue}}</span></li>',
+            '</ul>',
+          '</div>',
+        '</div>'
+
+		    ].join('')
+		  }
+		});
 })();
